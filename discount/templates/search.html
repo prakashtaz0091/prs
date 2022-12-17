@@ -25,7 +25,8 @@ home
           <div class="card-body">
             <p class="card-text">{{i.title}}</p> 
             <div class="d-flex justify-content-between align-items-center">
-              <small class="text-muted">{{i.rating}}</small>
+              <small class="text-muted">{{i.rating}} {{i.id}} </small>
+              <a href="{% url 'search_product_detail' i.id %}" >Detail</a>
             </div>
           </div>
         </div>
@@ -37,5 +38,4 @@ home
 </div>
 
 {% endblock body %}
-
 

@@ -7,6 +7,7 @@ from django.contrib.auth import logout, authenticate, login
 import requests
 from bs4 import BeautifulSoup
 import random
+from .models import ScrappedProduct,Search
 
 import pickle
 popular_df= pickle.load(open('home/popularD.pkl','rb'))
@@ -25,16 +26,63 @@ for i in popular_df['avg_rating']:
 for i in popular_df['img_url']:
   img_url.append(i)
 
-final_list=[]
-for n in range(0,50):
-  dict={}
-  dict['title']=title[n]
-  dict['image']=img_url[n]
-  dict['rating']=avg_rating[n]
-  final_list.append(dict)
+
+total_products = ScrappedProduct.objects.all().count()
+
+
+if total_products == 0:
+  final_list=[]
+  for n in range(0,50):
+    dict={}
+    dict['title']=title[n]
+    dict['image']=img_url[n]
+    dict['rating']=avg_rating[n]
+    final_list.append(dict)
+
+    ScrappedProduct.objects.create(
+      title = title[n],
+      image = img_url[n],
+      rating = avg_rating[n]
+    )
+
+  print("new products added")
+    
+
+  
 
 
 # Create your views here.
+
+
+def searchProductDetail(request,productId):
+
+  productFromDB = Search.objects.get(pk=productId)
+
+
+  product = {
+    'title':productFromDB.title,
+    'image':productFromDB.image,
+    'rating':productFromDB.rating
+  }
+
+  return render(request,"productDetail.html",{'product':product})
+
+
+
+def productDetail(request,productId):
+
+  productFromDB = ScrappedProduct.objects.get(pk=productId)
+
+
+  product = {
+    'title':productFromDB.title,
+    'image':productFromDB.image,
+    'rating':productFromDB.rating
+  }
+
+  return render(request,"productDetail.html",{'product':product})
+
+
 
 def get_html_content(element): 
     headers = {
@@ -66,6 +114,10 @@ def index(request):
     rating_list=[]
     imgurl_list=[]
 
+
+
+    
+
     # appending into list 
     for img_url in img_urls:
         if 'jpg' in img_url['src']:
@@ -76,7 +128,9 @@ def index(request):
     for rating in ratings:
         rating_list.append(rating.text.replace(' out of 5 stars',''))
 
-    scrap_amz=[]
+    Search.objects.all().delete()
+
+    scrap_amz = []
     for m in range(0,13):
         dict_scrap={}
         dict_scrap['title']=title_list[m]
@@ -84,11 +138,22 @@ def index(request):
         dict_scrap['rating']=rating_list[m]
         scrap_amz.append(dict_scrap)
 
+        Search.objects.create(
+          title = title_list[m],
+          image = imgurl_list[m],
+          rating = rating_list[m]
+        )
+
+    
+    products =Search.objects.all()
+    
 
 
-    return render(request, 'search.html', {'scrap_amz':scrap_amz})  
+    return render(request, 'search.html', {'scrap_amz':products})  
 
-  return render(request, 'index.html', {'popularlist':final_list})
+  productsFromDB = ScrappedProduct.objects.all()
+
+  return render(request, 'index.html', {'popularlist':productsFromDB})
    # return HttpResponse("this is about page")
 
 def about(request):
